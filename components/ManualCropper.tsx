@@ -118,7 +118,7 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     const imgAspect = imageSize.width / imageSize.height;
     const containerAspect = containerW / containerH;
     
-    let baseRenderWidth, baseRenderHeight;
+    let baseRenderWidth, _baseRenderHeight;
     
     if (imgAspect > containerAspect) {
        baseRenderHeight = containerH;
