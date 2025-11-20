@@ -1,0 +1,77 @@
+import React, { useRef, useState } from 'react';
+import { UploadCloud, Image as ImageIcon, Maximize2 } from 'lucide-react';
+
+interface UploadAreaProps {
+  onFileSelect: (file: File) => void;
+  isProcessing: boolean;
+}
+
+const UploadArea: React.FC<UploadAreaProps> = ({ onFileSelect, isProcessing }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndProcess(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndProcess(e.target.files[0]);
+    }
+  };
+
+  const validateAndProcess = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('请上传图片文件');
+      return;
+    }
+    onFileSelect(file);
+  };
+
+  return (
+    <div
+      className={`group relative w-full max-w-3xl mx-auto h-72 rounded-3xl border-2 border-dashed transition-all duration-500 ease-out cursor-pointer overflow-hidden
+        ${isDragging 
+          ? 'border-indigo-500/70 bg-indigo-500/10 scale-[1.01] shadow-[0_0_40px_rgba(79,70,229,0.2)]' 
+          : 'border-white/10 bg-white/[0.02] hover:border-indigo-500/40 hover:bg-white/[0.04] hover:shadow-xl'
+        }
+        ${isProcessing ? 'pointer-events-none opacity-50' : ''}
+      `}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onClick={() => fileInputRef.current?.click()}
+    >
+      <input type="file" ref={fileInputRef} onChange={handleFileInput} className="hidden" accept="image/*" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"></div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+        <div className={`relative mb-6 p-5 rounded-2xl transition-all duration-500 ${isDragging ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/40 scale-110' : 'bg-[#1A1F2E] text-gray-400 group-hover:text-indigo-400 group-hover:scale-105 group-hover:shadow-lg group-hover:bg-[#232839]'}`}>
+          {isDragging ? <UploadCloud className="w-10 h-10 animate-bounce" /> : <ImageIcon className="w-10 h-10" />}
+        </div>
+        <h3 className={`text-2xl font-bold mb-3 transition-colors duration-300 ${isDragging ? 'text-indigo-200' : 'text-white'}`}>
+          {isDragging ? '释放以上传' : '点击或拖拽图片'}
+        </h3>
+        <p className="text-gray-400 text-sm mb-6 max-w-sm">支持 JPG, PNG, WebP。无论原图尺寸如何，我们都将其转化为高清标准比例。</p>
+        <div className="flex items-center space-x-2 text-xs font-medium text-indigo-300/80 bg-indigo-500/10 px-4 py-1.5 rounded-full border border-indigo-500/20">
+          <Maximize2 className="w-3 h-3" />
+          <span>高清输出</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default UploadArea;
