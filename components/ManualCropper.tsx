@@ -21,12 +21,14 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // State
   const [selectedRatio, setSelectedRatio] = useState(RATIOS[0]);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
+  // Initialize image
   useEffect(() => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -38,11 +40,13 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
+  // Reset view when ratio changes
   useEffect(() => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
   }, [selectedRatio]);
 
+  // Handle drag constraints
   const updatePosition = (newX: number, newY: number, currentScale: number) => {
     if (!containerRef.current || imageSize.width === 0) return;
     
@@ -55,10 +59,13 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     
     let baseRenderWidth, baseRenderHeight;
     
+    // "Cover" logic: at Scale 1, image covers the container fully
     if (imgAspect > containerAspect) {
+       // Image is wider than container: fit height, crop width
        baseRenderHeight = containerH;
        baseRenderWidth = containerH * imgAspect;
     } else {
+       // Image is taller than container: fit width, crop height
        baseRenderWidth = containerW;
        baseRenderHeight = containerW / imgAspect;
     }
@@ -66,6 +73,7 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     const currentRenderWidth = baseRenderWidth * currentScale;
     const currentRenderHeight = baseRenderHeight * currentScale;
     
+    // Constraints: The image edge cannot be inside the container edge
     const minX = containerW - currentRenderWidth;
     const maxX = 0;
     const minY = containerH - currentRenderHeight;
@@ -89,6 +97,7 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging) return;
+    // e.preventDefault(); // Sometimes prevents scrolling on mobile, use carefully
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     
@@ -118,23 +127,25 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     const imgAspect = imageSize.width / imageSize.height;
     const containerAspect = containerW / containerH;
     
-    let baseRenderWidth, _baseRenderHeight;
+    let baseRenderWidth;
     
     if (imgAspect > containerAspect) {
-       baseRenderHeight = containerH;
        baseRenderWidth = containerH * imgAspect;
     } else {
        baseRenderWidth = containerW;
-       baseRenderHeight = containerW / imgAspect;
     }
     
     const currentRenderWidth = baseRenderWidth * scale;
+    // const currentRenderHeight = baseRenderHeight * scale;
     
+    // Ratio between Original Image Pixels and Rendered Pixels
     const imagePixelToRenderPixel = imageSize.width / currentRenderWidth;
     
+    // Crop X/Y (on original image)
     const sx = Math.abs(position.x) * imagePixelToRenderPixel;
     const sy = Math.abs(position.y) * imagePixelToRenderPixel;
     
+    // Crop Width/Height (on original image)
     const sWidth = containerW * imagePixelToRenderPixel;
     const sHeight = containerH * imagePixelToRenderPixel;
     
@@ -144,6 +155,7 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     );
   };
 
+  // Determine style for image to "cover" container
   const imgAspect = imageSize.width / (imageSize.height || 1);
   const targetAspect = selectedRatio.width / selectedRatio.height;
   let baseImageStyle: React.CSSProperties = {};
@@ -157,6 +169,8 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-fade-in">
       <div className="w-full max-w-5xl bg-[#131725] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col h-[90vh]">
+        
+        {/* Header */}
         <div className="p-4 border-b border-white/10 flex justify-between items-center shrink-0">
           <h3 className="text-white font-semibold flex items-center gap-2">
             <Move className="w-4 h-4 text-indigo-400" />
@@ -166,9 +180,18 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Main Content: Canvas + Controls */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          
+          {/* Left: Canvas Area */}
           <div className="flex-1 bg-[#0B0F19] relative flex items-center justify-center p-8 overflow-hidden select-none">
-            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#4F46E5 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            {/* Pattern Background */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none" 
+                 style={{ backgroundImage: 'radial-gradient(#4F46E5 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+            </div>
+
+            {/* Crop Container */}
             <div 
               ref={containerRef}
               className="relative bg-black border-2 border-indigo-500/50 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] cursor-move overflow-hidden rounded-sm touch-none transition-all duration-300 ease-in-out"
@@ -201,6 +224,8 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
                   className="absolute top-0 left-0 user-select-none"
                 />
               )}
+              
+              {/* Grid Overlay */}
               <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
                 <div className="border-r border-b border-white/30 shadow-[0_0_2px_rgba(0,0,0,0.5)]"></div>
                 <div className="border-r border-b border-white/30 shadow-[0_0_2px_rgba(0,0,0,0.5)]"></div>
@@ -214,15 +239,29 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
               </div>
             </div>
           </div>
+
+          {/* Right/Bottom: Tools Panel */}
           <div className="lg:w-72 bg-[#1A1F2E] border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col shrink-0 overflow-y-auto">
+            
             <div className="space-y-6">
+              {/* Aspect Ratio Selector */}
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block">常用比例</label>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block">
+                  常用比例
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   {RATIOS.map((ratio) => {
                     const Icon = ratio.icon;
                     return (
-                      <button key={ratio.id} onClick={() => setSelectedRatio(ratio)} className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-xl text-sm font-medium transition-all ${selectedRatio.id === ratio.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+                      <button
+                        key={ratio.id}
+                        onClick={() => setSelectedRatio(ratio)}
+                        className={`flex items-center justify-center space-x-2 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
+                          selectedRatio.id === ratio.id
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
                         <Icon className="w-4 h-4" />
                         <span>{ratio.label}</span>
                       </button>
@@ -230,29 +269,51 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
                   })}
                 </div>
               </div>
+
+              {/* Zoom Control */}
               <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block">缩放</label>
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block">
+                  缩放
+                </label>
                 <div className="flex items-center space-x-3 bg-black/20 p-3 rounded-xl border border-white/5">
                   <ZoomIn className="w-5 h-5 text-indigo-400" />
-                  <input type="range" min="1" max="3" step="0.01" value={scale} onChange={handleScaleChange} className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="3" 
+                    step="0.01" 
+                    value={scale}
+                    onChange={handleScaleChange}
+                    className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
                 </div>
               </div>
+
               <div className="pt-4 mt-auto border-t border-white/10">
                 <div className="flex flex-col gap-3">
-                  <button onClick={handleConfirm} className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-transform active:scale-95">
+                  <button 
+                    onClick={handleConfirm}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-transform active:scale-95"
+                  >
                     <Check className="w-4 h-4" />
                     确认并生成
                   </button>
-                  <button onClick={onCancel} className="w-full py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-medium">
+                  <button 
+                    onClick={onCancel}
+                    className="w-full py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                  >
                     取消
                   </button>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
+
       </div>
     </div>
   );
 };
+
 export default ManualCropper;
