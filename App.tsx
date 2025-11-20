@@ -12,6 +12,7 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<ProcessingStatus>(ProcessingStatus.IDLE);
   const [result, setResult] = useState<ProcessedImage | null>(null);
   
+  // Counter State with Persistence
   const [totalConverted, setTotalConverted] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('instacrops_total_converted');
@@ -20,11 +21,15 @@ const App: React.FC = () => {
     return 0;
   });
 
+  // Persist count whenever it changes
   useEffect(() => {
     localStorage.setItem('instacrops_total_converted', totalConverted.toString());
   }, [totalConverted]);
 
+  // Mode State
   const [mode, setMode] = useState<ProcessMode>('auto');
+  
+  // Manual Crop State
   const [tempFile, setTempFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
 
@@ -33,6 +38,7 @@ const App: React.FC = () => {
       setTempFile(file);
       setShowCropper(true);
     } else {
+      // Auto mode: Process immediately with default settings (16:9)
       processFile(file);
     }
   }, [mode]);
@@ -40,6 +46,7 @@ const App: React.FC = () => {
   const processFile = async (file: File, cropConfig?: CropConfig, outputDim?: OutputDimensions) => {
     setStatus(ProcessingStatus.PROCESSING);
     try {
+      // Simulate a tiny delay for better UX
       if (!cropConfig) await new Promise(resolve => setTimeout(resolve, 800));
 
       const { blob, width, height } = await processImage(file, cropConfig, outputDim);
@@ -63,6 +70,7 @@ const App: React.FC = () => {
       setStatus(ProcessingStatus.ERROR);
       alert("处理图片时出错，请重试。");
     } finally {
+      // Cleanup manual state
       setTempFile(null);
       setShowCropper(false);
     }
@@ -90,43 +98,75 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative bg-[#0B0F19] text-slate-200 overflow-x-hidden selection:bg-primary/30 selection:text-white">
+      
+      {/* Ambient Background Effects */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Top Left Blue/Purple Glow */}
         <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] opacity-40 animate-pulse-slow" />
+        {/* Bottom Right Pink/Red Glow */}
         <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-secondary/15 rounded-full blur-[100px] opacity-40" />
+        {/* Center Subtle Glow */}
         <div className="absolute top-[20%] left-[50%] translate-x-[-50%] w-[800px] h-[800px] bg-blue-600/5 rounded-full blur-[100px]" />
       </div>
+
+      {/* Content Wrapper */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header totalConverted={totalConverted} />
+        
         <main className="flex-1 container mx-auto px-4 py-12 md:py-20 flex flex-col items-center">
+          
+          {/* Hero Text */}
           {status === ProcessingStatus.IDLE && (
             <div className="text-center mb-12 max-w-4xl animate-fade-in relative">
                <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-md mb-8 shadow-[0_0_20px_rgba(79,70,229,0.15)]">
                 <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
                 <span className="text-xs font-semibold text-indigo-200 tracking-wide uppercase">Pro Image Tools</span>
               </div>
+              
               <h2 className="text-5xl md:text-7xl font-extrabold text-white mb-6 tracking-tight leading-tight">
                 智能构建
                 <span className="text-transparent bg-clip-text bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400"> 极致视觉</span>
               </h2>
+              
               <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto mb-10 font-light">
                 专为创作者打造的图像处理引擎。无论是社交媒体封面还是高清展示图，一键实现<span className="text-gray-200 font-medium">完美裁剪</span>与<span className="text-gray-200 font-medium">无损压缩</span>。
               </p>
+
+              {/* Mode Switcher */}
               <div className="inline-flex bg-[#131725] border border-white/10 p-1.5 rounded-2xl shadow-2xl relative z-20">
-                <button onClick={() => setMode('auto')} className={`flex items-center px-8 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${mode === 'auto' ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-900/40 scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <button
+                  onClick={() => setMode('auto')}
+                  className={`flex items-center px-8 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    mode === 'auto' 
+                      ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-900/40 scale-[1.02]' 
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
                   <Wand2 className="w-4 h-4 mr-2" />
                   自动模式 (16:9)
                 </button>
-                <button onClick={() => setMode('manual')} className={`flex items-center px-8 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${mode === 'manual' ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-900/40 scale-[1.02]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                <button
+                  onClick={() => setMode('manual')}
+                  className={`flex items-center px-8 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    mode === 'manual' 
+                      ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-900/40 scale-[1.02]' 
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
                   <CropIcon className="w-4 h-4 mr-2" />
                   手动裁剪
                 </button>
               </div>
             </div>
           )}
+
+          {/* Main Action Area */}
           <div className="w-full flex flex-col items-center justify-center min-h-[320px] transition-all duration-500">
+            
             {status === ProcessingStatus.IDLE && (
               <UploadArea onFileSelect={handleFileSelect} isProcessing={false} />
             )}
+
             {status === ProcessingStatus.PROCESSING && (
               <div className="flex flex-col items-center justify-center w-full max-w-lg p-12 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl animate-fade-in">
                 <div className="relative mb-6">
@@ -137,10 +177,14 @@ const App: React.FC = () => {
                 <p className="text-gray-400 text-center">正在{mode === 'manual' ? '应用您的裁剪' : '智能分析主体'}，并生成高清图像。</p>
               </div>
             )}
+
             {status === ProcessingStatus.SUCCESS && result && (
               <ResultCard data={result} onReset={handleReset} />
             )}
+
           </div>
+
+          {/* Features Footer - Only show on IDLE */}
           {status === ProcessingStatus.IDLE && (
             <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 text-center w-full max-w-5xl">
               {[
@@ -156,14 +200,22 @@ const App: React.FC = () => {
             </div>
           )}
         </main>
+        
         <footer className="py-8 text-center text-gray-600 text-sm border-t border-white/[0.05] bg-[#0B0F19]/50">
           <p>&copy; {new Date().getFullYear()} InstaCrops Pro. Designed for 宁波大学 Camerart</p>
         </footer>
       </div>
+
+      {/* Manual Cropper Overlay */}
       {showCropper && tempFile && (
-        <ManualCropper file={tempFile} onConfirm={handleManualCropConfirm} onCancel={handleManualCropCancel} />
+        <ManualCropper 
+          file={tempFile} 
+          onConfirm={handleManualCropConfirm} 
+          onCancel={handleManualCropCancel} 
+        />
       )}
     </div>
   );
 };
+
 export default App;

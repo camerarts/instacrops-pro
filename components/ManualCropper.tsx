@@ -136,7 +136,6 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
     }
     
     const currentRenderWidth = baseRenderWidth * scale;
-    // const currentRenderHeight = baseRenderHeight * scale;
     
     // Ratio between Original Image Pixels and Rendered Pixels
     const imagePixelToRenderPixel = imageSize.width / currentRenderWidth;
