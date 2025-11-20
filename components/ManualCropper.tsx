@@ -317,3 +317,4 @@ const ManualCropper: React.FC<ManualCropperProps> = ({ file, onConfirm, onCancel
 };
 
 export default ManualCropper;
+
